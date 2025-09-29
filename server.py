@@ -13,7 +13,7 @@ def read_item(item_id: int, q: str = None):
     return {"item_id": item_id, "q": q}
 
 @app.get("/getcallinfo")
-def test_endpoint(request: Request):
+def endpoint1(request: Request):
     client_ip = getattr(request, "client", None)
     client_ip = client_ip.host if client_ip else None
     headers = dict(request.headers)
