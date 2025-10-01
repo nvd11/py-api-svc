@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: py-api-svc
+  labels:
+    app: py-api-svc
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: py-api-svc
+  template:
+    metadata:
+      labels:
+        app: py-api-svc
+    spec:
+      containers:
+        - name: py-api-svc
+          image: europe-west2-docker.pkg.dev/$PROJECT_ID/my-docker-repo/py-api-svc:latest
+          ports:
+            - containerPort: 8000
+
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clusterip-py-api-svc
+spec:
+  selector:
+    app: py-api-svc # for the pods that have the label app: bq-api-service
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+  type: ClusterIP
