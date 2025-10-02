@@ -69,7 +69,7 @@ options: # https://cloud.google.com/cloud-build/docs/build-config#options
 
 substitutions:
   _APP_NAME: py-api-svc
-  _APP_TAG: latest
+  _APP_TAG: 0.0.2
   _BUILD_SERVER_HOST: tf-vpc0-subnet0-vm0 
   _ZONE: europe-west2-c
   _K8S_TMP_BUCKET: gs://jason-hsbc_cloudbuild/k8s_yamls/

@@ -1,7 +1,8 @@
-
+import src.configs.config
 
 from fastapi import FastAPI, Request, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
+from loguru import logger
 
 app = FastAPI(root_path="/pyapi")
 
@@ -16,7 +17,8 @@ app.add_middleware(RootPathRedirectMiddleware)
 
 @app.get("/")
 def read_root():
-    return {"message": "Hello, FastAPI!"}
+    logger.info("Root endpoint accessed!")
+    return {"message": "Hello, FastAPI222!"}
 
 @app.get("/items/{item_id}")
 def read_item(item_id: int, q: str = None):

@@ -1,4 +1,4 @@
-Fimport yaml
+import yaml
 import os
 import sys
 from loguru import logger
