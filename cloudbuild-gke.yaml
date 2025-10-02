@@ -28,17 +28,16 @@ steps:
       - '-c'
       - |
         gcloud compute instances describe ${_BUILD_SERVER_HOST} --zone=${_ZONE} --format='value(status)' | grep -q 'RUNNING' || gcloud compute instances start ${_BUILD_SERVER_HOST} --zone=${_ZONE}
- 
+  
   - id: copy k8s yamls to tmp bucket
     name: gcr.io/cloud-builders/gsutil
+    entrypoint: bash
     args:
-      [
-        "-m",
-        "cp",
-        "-r",
-        "k8s/deployment.yaml",
-        "${_K8S_TMP_BUCKET}/deployment-$BUILD_ID.yaml"
-      ]
+      - '-c'
+      - |
+        gsutil cp k8s/deployment.yaml ${_K8S_TMP_BUCKET}/deployment-$BUILD_ID.yaml
+        gsutil cp k8s/ingress.yaml ${_K8S_TMP_BUCKET}/ingress-$BUILD_ID.yaml
+        gsutil ls -l ${_K8S_TMP_BUCKET}/
 
   - id: deploy image to GKE
     name: 'gcr.io/cloud-builders/gcloud'
@@ -56,9 +55,11 @@ steps:
         chmod 600 /root/.ssh/id_rsa.pub
         gcloud compute ssh gateman@${_BUILD_SERVER_HOST} --zone=${_ZONE} --quiet --ssh-key-file=/root/.ssh/id_rsa -- "pwd && gcloud auth list && kubectl get nodes" 
         gcloud compute ssh gateman@${_BUILD_SERVER_HOST} --zone=${_ZONE} --quiet --ssh-key-file=/root/.ssh/id_rsa -- "gsutil cp ${_K8S_TMP_BUCKET}/deployment-$BUILD_ID.yaml ."  
+        gcloud compute ssh gateman@${_BUILD_SERVER_HOST} --zone=${_ZONE} --quiet --ssh-key-file=/root/.ssh/id_rsa -- "gsutil cp ${_K8S_TMP_BUCKET}/ingress-$BUILD_ID.yaml ."
         gcloud compute ssh gateman@${_BUILD_SERVER_HOST} --zone=${_ZONE} --quiet --ssh-key-file=/root/.ssh/id_rsa -- "sed -i 's|image: .*|image: europe-west2-docker.pkg.dev/$PROJECT_ID/my-docker-repo/${_APP_NAME}:${_APP_TAG}|g' deployment-$BUILD_ID.yaml"
         gcloud compute ssh gateman@${_BUILD_SERVER_HOST} --zone=${_ZONE} --quiet --ssh-key-file=/root/.ssh/id_rsa -- "kubectl apply -f deployment-$BUILD_ID.yaml"
-        gcloud compute ssh gateman@${_BUILD_SERVER_HOST} --zone=${_ZONE} --quiet --ssh-key-file=/root/.ssh/id_rsa -- "kubectl rollout status deployment/${_APP_NAME}-deployment --timeout=90s"
+        gcloud compute ssh gateman@${_BUILD_SERVER_HOST} --zone=${_ZONE} --quiet --ssh-key-file=/root/.ssh/id_rsa -- "kubectl apply -f ingress-$BUILD_ID.yaml"
+        gcloud compute ssh gateman@${_BUILD_SERVER_HOST} --zone=${_ZONE} --quiet --ssh-key-file=/root/.ssh/id_rsa -- "kubectl rollout status deployment/${_APP_NAME} --timeout=90s"
         gcloud compute ssh gateman@${_BUILD_SERVER_HOST} --zone=${_ZONE} --quiet --ssh-key-file=/root/.ssh/id_rsa -- "kubectl get pods -o wide"
         gcloud compute ssh gateman@${_BUILD_SERVER_HOST} --zone=${_ZONE} --quiet --ssh-key-file=/root/.ssh/id_rsa -- "kubectl get svc"
 

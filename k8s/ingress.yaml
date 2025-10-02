@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-py-api-svc
+  labels:
+    app: py-api-svc
+spec:
+  ingressClassName: "gce"
+  rules:
+  - http:
+      paths:
+      - path: /pyapi/
+        pathType: Prefix
+        backend:
+          service:
+            name: clusterip-py-api-svc
+            port:
+              number: 8000
+      - path: /pyapi/api
+        pathType: Prefix
+        backend:
+          service:
+            name: clusterip-py-api-svc
+            port:
+              number: 8000

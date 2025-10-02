@@ -1,8 +1,18 @@
 
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
+from starlette.middleware.base import BaseHTTPMiddleware
 
-app = FastAPI()
+app = FastAPI(root_path="/pyapi")
+
+class RootPathRedirectMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if not request.url.path.startswith(app.root_path):
+            raise HTTPException(status_code=404, detail="Not Found")
+        response = await call_next(request)
+        return response
+
+app.add_middleware(RootPathRedirectMiddleware)
 
 @app.get("/")
 def read_root():
