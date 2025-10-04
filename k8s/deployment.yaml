@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: py-api-svc
-          image: europe-west2-docker.pkg.dev/$PROJECT_ID/my-docker-repo/py-api-svc:latest
+          image: europe-west2-docker.pkg.dev/$PROJECT_ID/my-docker-repo/py-api-svc:0.0.3
           ports:
             - containerPort: 8000
 

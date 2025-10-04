@@ -9,17 +9,20 @@ spec:
   rules:
   - http:
       paths:
-      - path: /pyapi/
+      - path: /pyapi
         pathType: Prefix
         backend:
           service:
             name: clusterip-py-api-svc
             port:
               number: 8000
-      - path: /pyapi/api
+  - http:
+      paths:
+      - path: /
         pathType: Prefix
         backend:
           service:
             name: clusterip-py-api-svc
             port:
               number: 8000
+

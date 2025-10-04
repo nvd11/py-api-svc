@@ -6,19 +6,11 @@ from loguru import logger
 
 app = FastAPI(root_path="/pyapi")
 
-class RootPathRedirectMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        if not request.url.path.startswith(app.root_path):
-            raise HTTPException(status_code=404, detail="Not Found")
-        response = await call_next(request)
-        return response
-
-app.add_middleware(RootPathRedirectMiddleware)
 
 @app.get("/")
 def read_root():
     logger.info("Root endpoint accessed!")
-    return {"message": "Hello, FastAPI222!"}
+    return {"message": "Hello, FastAPI223!"}
 
 @app.get("/items/{item_id}")
 def read_item(item_id: int, q: str = None):

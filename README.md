@@ -73,14 +73,7 @@ from loguru import logger
 
 app = FastAPI(root_path="/pyapi")
 
-class RootPathRedirectMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        if not request.url.path.startswith(app.root_path):
-            raise HTTPException(status_code=404, detail="Not Found")
-        response = await call_next(request)
-        return response
 
-app.add_middleware(RootPathRedirectMiddleware)
 
 @app.get("/")
 def read_root():
@@ -117,20 +110,22 @@ spec:
   rules:
   - http:
       paths:
-      - path: /pyapi/
+      - path: /pyapi
         pathType: Prefix
         backend:
           service:
             name: clusterip-py-api-svc
             port:
               number: 8000
-      - path: /pyapi/api
-        pathType: Prefix
-        backend:
-          service:
-            name: clusterip-py-api-svc
-            port:
-              number: 8000
+      - http:
+            paths:
+            - path: /
+              pathType: Prefix
+              backend:
+                service:
+                  name: clusterip-py-api-svc
+                  port:
+                    number: 8000
 ```
 
 这是ingress部署后的信息
@@ -155,3 +150,99 @@ Annotations:  ingress.kubernetes.io/backends:
 Events:       <none>
 gateman@tf-vpc0-subnet0-vm0:~$ 
 ``` 
+
+
+http://cloud.kubernetes-engine/docs/tutorials/private-cluster-bastion
+https://cloud.google.com/kubernetes-engine/docs/tutorials/private-cluster-bastion?hl=zh-cn
+https://cloud.google.com/kubernetes-engine/docs/troubleshooting/network-isolation#cluster-no-external-endpoint
+
+==============================================================================================================
+
+
+我部署了一个fastapi app 到k8s， 和一个相应的clusterip 在gke的private cluster my-cluster1中
+```bash
+gateman@tf-vpc0-subnet0-vm0:~$ kubectl get svc
+NAME                   TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
+clusterip-py-api-svc   ClusterIP   192.170.29.241   <none>        8000/TCP   18h
+kubernetes             ClusterIP   192.170.16.1     <none>        443/TCP    27d
+gateman@tf-vpc0-subnet0-vm0:~$ kubectl describe svc clusterip-py-api-svc
+Name:                     clusterip-py-api-svc
+Namespace:                default
+Labels:                   <none>
+Annotations:              cloud.google.com/neg: {"ingress":true}
+Selector:                 app=py-api-svc
+Type:                     ClusterIP
+IP Family Policy:         SingleStack
+IP Families:              IPv4
+IP:                       192.170.29.241
+IPs:                      192.170.29.241
+Port:                     <unset>  8000/TCP
+TargetPort:               8000/TCP
+Endpoints:                192.169.17.7:8000,192.169.19.8:8000,192.169.18.9:8000
+Session Affinity:         None
+Internal Traffic Policy:  Cluster
+Events:                   <none>
+gateman@tf-vpc0-subnet0-vm0:~$ kubectl get pods -o wide
+NAME                          READY   STATUS    RESTARTS   AGE   IP              NODE                                          NOMINATED NODE   READINESS GATES
+dns-test                      1/1     Running   0          17h   192.169.19.7    gke-my-cluster1-my-node-pool1-5cad8c5c-4xw8   <none>           <none>
+py-api-svc-6f44547c88-d59bl   1/1     Running   0          27m   192.169.17.7    gke-my-cluster1-my-node-pool1-f7d2eb2b-e0gi   <none>           <none>
+py-api-svc-6f44547c88-gksk4   1/1     Running   0          27m   192.169.19.8    gke-my-cluster1-my-node-pool1-5cad8c5c-4xw8   <none>           <none>
+py-api-svc-6f44547c88-n2rj6   1/1     Running   0          27m   192.169.18.9    gke-my-cluster1-my-node-pool1-8902d932-ab08   <none>           <none>
+test-curl2                    1/1     Running   0          77m   192.169.21.17   gke-my-cluster1-my-node-pool1-5cad8c5c-lrwc   <none>           <none>
+```
+
+然后基于下面的YAML配置创建了1个ingress
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-py-api-svc
+  labels:
+    app: py-api-svc
+spec:
+  ingressClassName: "gce"
+  rules:
+  - http:
+      paths:
+      - path: /pyapi
+        pathType: Prefix
+        backend:
+          service:
+            name: clusterip-py-api-svc
+            port:
+              number: 8000
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: clusterip-py-api-svc
+            port:
+              number: 8000
+
+```
+
+为什么ingress 创建后没有被分配地址？
+```bash
+gateman@tf-vpc0-subnet0-vm0:~$ kubectl describe ingress ingress-py-api-svc
+Name:             ingress-py-api-svc
+Labels:           app=py-api-svc
+Namespace:        default
+Address:          
+Ingress Class:    gce
+Default backend:  <default>
+Rules:
+  Host        Path  Backends
+  ----        ----  --------
+  *           
+              /pyapi   clusterip-py-api-svc:8000 (192.169.21.18:8000,192.169.18.10:8000,192.169.17.8:8000)
+  *           
+              /   clusterip-py-api-svc:8000 (192.169.21.18:8000,192.169.18.10:8000,192.169.17.8:8000)
+Annotations:  <none>
+Events:       <none>
+gateman@tf-vpc0-subnet0-vm0:~$ kubectl get ingress
+NAME                 CLASS   HOSTS   ADDRESS   PORTS   AGE
+ingress-py-api-svc   gce     *                 80      11m
+gateman@tf-vpc0-subnet0-vm0:~$ 
+```
