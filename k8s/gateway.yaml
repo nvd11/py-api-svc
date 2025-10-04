@@ -23,6 +23,16 @@ spec:
   hostnames:
     - "api.example.com"
   rules:
-    - backendRefs:
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /pyapi
+      filters:
+      - type: URLRewrite
+        urlRewrite:
+          path:
+            type: ReplacePrefixMatch
+            replacePrefixMatch: /
+      backendRefs:
         - name: clusterip-py-api-svc
           port: 8000
