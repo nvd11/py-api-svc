@@ -10,7 +10,7 @@ app = FastAPI(root_path="/pyapi")
 @app.get("/")
 def read_root():
     logger.info("Root endpoint accessed!")
-    return {"message": "Hello, FastAPI223!"}
+    return {"message": "Hello, py-api-svc!"}
 
 @app.get("/items/{item_id}")
 def read_item(item_id: int, q: str = None):
