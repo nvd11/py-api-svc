@@ -27,6 +27,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: clusterip-py-api-svc
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'
 spec:
   selector:
     app: py-api-svc # for the pods that have the label app: bq-api-service
