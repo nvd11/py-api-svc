@@ -4,6 +4,9 @@ from fastapi import FastAPI, Request, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 from loguru import logger
 
+logger.remove()
+logger.add("/app/logs/app.log", format="{time:YYYY-MM-DD HH:mm:ss.SSS} LEVEL={level} MESSAGE={message}")
+
 app = FastAPI(root_path="/pyapi")
 
 

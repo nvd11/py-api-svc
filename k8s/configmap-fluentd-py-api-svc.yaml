@@ -11,9 +11,9 @@ data:
         tag app.logs
         <parse>
           @type regexp
-          expression /^(?<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3,6}) \| (?<level>\w+)\s* \| (?<message>.*)$/
+          expression /^(?<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3,6}) LEVEL=(?<level>\w+) MESSAGE=(?<message>.*)$/
           time_key timestamp
-          time_format %Y-%m-%d %H:%M:%S.%N
+          time_format %Y-%m-%d %H:%M:%S.%L
         </parse>
     </source>
 
@@ -39,7 +39,13 @@ data:
       project jason-hsbc
       dataset LOGS
       auto_create_table true
-      table py-api-logs-v2
+      table py-api-logs-v3
+
+      <inject>
+        time_key time_field_name
+        time_type string
+        time_format %Y-%m-%d %H:%M:%S
+      </inject>
 
       schema [
         {
