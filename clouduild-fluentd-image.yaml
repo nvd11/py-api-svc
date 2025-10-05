@@ -1,0 +1,42 @@
+# just to update the docker image to GAR with the pom.xml version
+
+steps:
+  - id: prepare service acccount json key file
+    name: ubuntu # https://hub.docker.com/_/maven
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        ls -l
+        echo $$FLUENTD_INGRESS_JASON_HSBC_KEY > fluentd-ingress-jason-hsbc.json
+        ls -l
+        cat ./fluentd-ingress-jason-hsbc.json
+    secretEnv:
+      - 'FLUENTD_INGRESS_JASON_HSBC_KEY'
+
+  - id: build and push docker image
+    name: 'gcr.io/cloud-builders/docker'
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        set -x
+        echo "Building docker image with tag: $_APP_TAG"
+        docker build -t $_GAR_BASE/$PROJECT_ID/$_DOCKER_REPO_NAME/${_APP_NAME}:${_APP_TAG} -f fluentd-image/Dockerfile .
+        docker push $_GAR_BASE/$PROJECT_ID/$_DOCKER_REPO_NAME/${_APP_NAME}:${_APP_TAG}
+
+
+logsBucket: gs://jason-hsbc_cloudbuild/logs/
+options: # https://cloud.google.com/cloud-build/docs/build-config#options
+  logging: GCS_ONLY # or CLOUD_LOGGING_ONLY https://cloud.google.com/cloud-build/docs/build-config#logging
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/$PROJECT_ID/secrets/fluentd-ingress-jason-hsbc-key/versions/latest
+      env: 'FLUENTD_INGRESS_JASON_HSBC_KEY'
+
+substitutions:
+  _DOCKER_REPO_NAME: my-docker-repo
+  _APP_NAME: fluentd-bigquery
+  _APP_TAG: 1.0.0
+  _GAR_BASE: europe-west2-docker.pkg.dev
