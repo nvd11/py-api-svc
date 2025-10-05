@@ -1,0 +1,76 @@
+steps:
+  # Build the container image
+  - id: build docker image
+    name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "-t",
+        "europe-west2-docker.pkg.dev/$PROJECT_ID/my-docker-repo/${_APP_NAME}:${_APP_TAG}",
+        "-f",
+        "Dockerfile",
+        ".",
+      ]
+
+  # Push the container image to Google Container Registry
+  - id: upload docker image to GAR
+    name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "push",
+        "europe-west2-docker.pkg.dev/$PROJECT_ID/my-docker-repo/${_APP_NAME}:${_APP_TAG}",
+      ]
+
+  - id: check and start build server
+    name: gcr.io/cloud-builders/gcloud
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        gcloud compute instances describe ${_BUILD_SERVER_HOST} --zone=${_ZONE} --format='value(status)' | grep -q 'RUNNING' || gcloud compute instances start ${_BUILD_SERVER_HOST} --zone=${_ZONE}
+  
+  - id: copy k8s yamls to tmp bucket
+    name: gcr.io/cloud-builders/gsutil
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        gsutil cp k8s/deployment.yaml ${_K8S_TMP_BUCKET}/deployment-$BUILD_ID.yaml
+        gsutil cp k8s/ingress.yaml ${_K8S_TMP_BUCKET}/ingress-$BUILD_ID.yaml
+        gsutil ls -l ${_K8S_TMP_BUCKET}/
+
+  - id: deploy image to GKE
+    name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        whoami
+        gcloud auth list
+        set -x
+        mkdir -p /root/.ssh
+        gcloud secrets versions access latest --secret=gateman-private-ssh-key > /root/.ssh/id_rsa
+        gcloud secrets versions access latest --secret=gateman-public-ssh-key > /root/.ssh/id_rsa.pub
+        chmod 600 /root/.ssh/id_rsa
+        chmod 600 /root/.ssh/id_rsa.pub
+        gcloud compute ssh gateman@${_BUILD_SERVER_HOST} --zone=${_ZONE} --quiet --ssh-key-file=/root/.ssh/id_rsa -- "pwd && gcloud auth list && kubectl get nodes" 
+        gcloud compute ssh gateman@${_BUILD_SERVER_HOST} --zone=${_ZONE} --quiet --ssh-key-file=/root/.ssh/id_rsa -- "gsutil cp ${_K8S_TMP_BUCKET}/deployment-$BUILD_ID.yaml ."  
+        gcloud compute ssh gateman@${_BUILD_SERVER_HOST} --zone=${_ZONE} --quiet --ssh-key-file=/root/.ssh/id_rsa -- "gsutil cp ${_K8S_TMP_BUCKET}/ingress-$BUILD_ID.yaml ."
+        gcloud compute ssh gateman@${_BUILD_SERVER_HOST} --zone=${_ZONE} --quiet --ssh-key-file=/root/.ssh/id_rsa -- "sed -i 's|image: .*|image: europe-west2-docker.pkg.dev/$PROJECT_ID/my-docker-repo/${_APP_NAME}:${_APP_TAG}|g' deployment-$BUILD_ID.yaml"
+        gcloud compute ssh gateman@${_BUILD_SERVER_HOST} --zone=${_ZONE} --quiet --ssh-key-file=/root/.ssh/id_rsa -- "kubectl apply -f deployment-$BUILD_ID.yaml"
+        gcloud compute ssh gateman@${_BUILD_SERVER_HOST} --zone=${_ZONE} --quiet --ssh-key-file=/root/.ssh/id_rsa -- "kubectl apply -f ingress-$BUILD_ID.yaml"
+        gcloud compute ssh gateman@${_BUILD_SERVER_HOST} --zone=${_ZONE} --quiet --ssh-key-file=/root/.ssh/id_rsa -- "kubectl rollout status deployment/${_APP_NAME} --timeout=90s"
+        gcloud compute ssh gateman@${_BUILD_SERVER_HOST} --zone=${_ZONE} --quiet --ssh-key-file=/root/.ssh/id_rsa -- "kubectl get pods -o wide"
+        gcloud compute ssh gateman@${_BUILD_SERVER_HOST} --zone=${_ZONE} --quiet --ssh-key-file=/root/.ssh/id_rsa -- "kubectl get svc"
+
+logsBucket: gs://jason-hsbc_cloudbuild/logs/
+options: # https://cloud.google.com/cloud-build/docs/build-config#options
+  logging: GCS_ONLY # or CLOUD_LOGGING_ONLY https://cloud.google.com/cloud-build/docs/build-config#logging
+
+substitutions:
+  _APP_NAME: py-api-svc
+  _APP_TAG: 0.0.2
+  _BUILD_SERVER_HOST: tf-vpc0-subnet0-vm0 
+  _ZONE: europe-west2-c
+  _K8S_TMP_BUCKET: gs://jason-hsbc_cloudbuild/k8s_yamls/
+
