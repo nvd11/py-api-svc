@@ -8,23 +8,11 @@ data:
         @type tail
         path /app/logs/app.log
         pos_file /app/logs/app.log.pos
-        tag app.logs
-        <parse>
-          @type regexp
-          expression /^(?<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3,6}) LEVEL=(?<level>\w+) MESSAGE=(?<message>.*)$/
-          time_key timestamp
-          time_format %Y-%m-%d %H:%M:%S.%L
-        </parse>
+        tag app.logs 
+        format none
     </source>
 
-    <filter app.logs>
-      @type record_transformer
-      <record>
-        service_name "py-api-svc"
-      </record>
-    </filter>
-
-    <match app.logs>
+    <match **>
       @type bigquery_insert
       
       <buffer>
@@ -39,13 +27,15 @@ data:
       project jason-hsbc
       dataset LOGS
       auto_create_table true
-      table py-api-logs-v3
+      table py-api-logs-v5
 
-      <inject>
-        time_key time_field_name
+       <inject>
+        time_key timestamp
+        # time_type unixtime_millis # out of range
         time_type string
-        time_format %Y-%m-%d %H:%M:%S
+        time_format %Y-%m-%d %H:%M:%S.%L
       </inject>
+
 
       schema [
         {
