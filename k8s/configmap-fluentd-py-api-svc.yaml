@@ -12,7 +12,14 @@ data:
         format none
     </source>
 
-    <match **>
+    <filter app.logs>
+      @type record_transformer
+      <record>
+        service_name "py-api-svc"
+      </record>
+    </filter>
+
+    <match app.logs>
       @type bigquery_insert
       
       <buffer>
@@ -27,7 +34,7 @@ data:
       project jason-hsbc
       dataset LOGS
       auto_create_table true
-      table py-api-logs-v5
+      table py-api-logs-v6
 
        <inject>
         time_key timestamp
