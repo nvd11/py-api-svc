@@ -28,7 +28,7 @@ spec:
 
 
         - name: sidecar-fluentd
-          image: europe-west2-docker.pkg.dev/jason-hsbc/my-docker-repo/fluentd-bigquery:1.0.0
+          image: europe-west2-docker.pkg.dev/jason-hsbc/my-docker-repo/fluentd-bigquery:1.0.1
           imagePullPolicy: Always
           command: ["sh"]
           args: 

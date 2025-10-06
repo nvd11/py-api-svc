@@ -5,7 +5,7 @@ RUN mkdir -p /app/logs/
 RUN mkdir /app/gcp-key/
 
 # 安装 fluent-plugin-bigquery 插件
-RUN gem install fluent-plugin-bigquery
+RUN gem install fluent-plugin-bigquery fluent-plugin-grok-parser
 
 # 复制 Fluentd 配置文件到镜像中
 #COPY fluent.conf /fluentd/etc/fluent.conf

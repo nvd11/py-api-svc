@@ -8,8 +8,13 @@ data:
         @type tail
         path /app/logs/app.log
         pos_file /app/logs/app.log.pos
-        tag app.logs 
-        format none
+        tag app.logs
+        <parse>
+          @type grok
+          <grok>
+            pattern %{TIMESTAMP_ISO8601:timestamp} \| %{LOGLEVEL:level}\s*\| %{GREEDYDATA:message}
+          </grok>
+        </parse>
     </source>
 
     <filter app.logs>
@@ -34,7 +39,7 @@ data:
       project jason-hsbc
       dataset LOGS
       auto_create_table true
-      table py-api-logs-v6
+      table py-api-logs-v8
 
        <inject>
         time_key timestamp

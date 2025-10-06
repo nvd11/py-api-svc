@@ -38,5 +38,5 @@ availableSecrets:
 substitutions:
   _DOCKER_REPO_NAME: my-docker-repo
   _APP_NAME: fluentd-bigquery
-  _APP_TAG: 1.0.0
+  _APP_TAG: 1.0.1
   _GAR_BASE: europe-west2-docker.pkg.dev
