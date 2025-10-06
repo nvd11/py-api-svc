@@ -39,7 +39,7 @@ data:
       project jason-hsbc
       dataset LOGS
       auto_create_table true
-      table py-api-logs-v8
+      table py-api-logs
 
        <inject>
         time_key timestamp
