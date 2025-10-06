@@ -26,4 +26,4 @@ yaml_configs = None
 with open(os.path.join(project_path, "src", "configs", "config_dev.yaml")) as f:
     yaml_configs = yaml.load(f, Loader=yaml.FullLoader)
 
-logger.info("all configs loaded")sss
+logger.info("all configs loaded")
