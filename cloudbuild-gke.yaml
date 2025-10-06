@@ -7,13 +7,13 @@ steps:
       - "-c"
       - |
         set -e
-        LATEST_TAG=$$(gcloud artifacts docker tags list europe-west2-docker.pkg.dev/$PROJECT_ID/my-docker-repo/${_APP_NAME} --sort-by="~TAG" --format="value(TAG)" | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
+        LATEST_TAG=$$(gcloud artifacts docker tags list europe-west2-docker.pkg.dev/$PROJECT_ID/my-docker-repo/${_APP_NAME} --format="value(TAG)" | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+' | sort -V | tail -n 1)
         if [ -z "$$LATEST_TAG" ]; then
           NEW_TAG="0.0.1"
         else
           MAJOR=$$(echo $$LATEST_TAG | cut -d. -f1)
           MINOR=$$(echo $$LATEST_TAG | cut -d. -f2)
-          PATCH=$$(echo $$LATEST_TAG | cut -d. -f3)
+                            PATCH=$$(echo $$LATEST_TAG | cut -d. -f3)
           NEW_PATCH=$$((PATCH + 1))
           NEW_TAG="$$MAJOR.$$MINOR.$$NEW_PATCH"
         fi
