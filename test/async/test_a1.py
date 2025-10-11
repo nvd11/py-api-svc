@@ -55,3 +55,7 @@ async def test_a2():
     # 再测试同步
     sync_demo()
 
+
+def  test_a1():
+    asyncio.run(test_a2())
+
