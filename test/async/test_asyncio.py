@@ -1,24 +1,30 @@
 import src.configs.config
 from loguru import logger
 import asyncio
+import pytest
 
-
-async def func1():
+@asyncio.coroutine
+def func1():
     logger.info("step 1")    # Log step 1
-    await asyncio.sleep(2)   # Asynchronously wait for 2 seconds
+    yield from asyncio.sleep(2)   # Asynchronously wait for 2 seconds
     logger.info("step 2")    # Log step 2
 
-
-async def func2():
+@asyncio.coroutine
+def func2():
     logger.info("step 3")    # Log step 3
-    await asyncio.sleep(2)   # Asynchronously wait for 2 seconds
+    yield from asyncio.sleep(2)   # Asynchronously wait for 2 seconds
     logger.info("step 4")    # Log step 4
 
-
-async def test_asyncio():
+@pytest.mark.asyncio
+@asyncio.coroutine
+def test_asyncio():
     tasks = [                # Create a list of coroutine tasks
         func1(),
         func2(),
     ]
-    await asyncio.gather(*tasks) # Run the tasks concurrently
- 
+    yield from asyncio.gather(*tasks) # Run the tasks concurrently
+
+# To make the file runnable for verification
+if __name__ == '__main__':
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(test_asyncio())

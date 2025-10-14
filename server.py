@@ -1,35 +1,18 @@
 import src.configs.config
 
-from fastapi import FastAPI, Request, HTTPException
-from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi import FastAPI, Request
 from loguru import logger
-
+from src.routers import async_router, test_router
 
 app = FastAPI(root_path="/pyapi")
 
+app.include_router(async_router.router)
+app.include_router(test_router.router)
 
 @app.get("/")
 def read_root():
     logger.info("Root endpoint accessed!")
     return {"message": "Hello, py-api-svc!"}
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: str = None):
-    return {"item_id": item_id, "q": q}
-
-@app.get("/getcallinfo")
-def endpoint1(request: Request):
-    client_ip = getattr(request, "client", None)
-    client_ip = client_ip.host if client_ip else None
-    headers = dict(request.headers)
-    return {
-        "client_ip": client_ip,
-        "host": headers.get("host"),
-        "method": request.method,
-        "path": request.url.path,
-        "query": request.url.query,
-        "headers": headers,
-    }
 
 
 if __name__ == "__main__":
