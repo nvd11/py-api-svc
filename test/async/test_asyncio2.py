@@ -1,8 +1,51 @@
+import http.client
+import json
 import time
 import asyncio
 import aiohttp
 import pytest
 from loguru import logger
+
+# --- Synchronous Functions (Original) ---
+
+def call_test_api(item_id: int):
+    """Synchronously calls the test API and returns the response.
+
+    Args:
+        item_id (int): The ID of the item to request.
+
+    Returns:
+        dict: The JSON response from the API as a dictionary.
+    """
+    conn = http.client.HTTPConnection("jpgcp.shop")
+    conn.request("GET", f"/pyapi/async/test/{item_id}")
+    response = conn.getresponse()
+    data = response.read().decode()
+    conn.close()
+    logger.info(f"Sync API response for item_id {item_id}: {data}")
+    return json.loads(data)
+
+def sync_func1():
+    """Wrapper function to synchronously call the API for item_id 1."""
+    logger.info("sync step 1")
+    call_test_api(1)
+    logger.info("sync step 2")
+
+def sync_func2():
+    """Wrapper function to synchronously call the API for item_id 2."""
+    logger.info("sync step 3")
+    call_test_api(2)
+    logger.info("sync step 4")
+
+def test_sync():
+    """Runs and times the synchronous API calls sequentially."""
+    logger.info("--- Starting Synchronous Test ---")
+    time_start = time.time()
+    sync_func1()
+    sync_func2()
+    time_end = time.time()
+    logger.info(f"All sync tasks completed in {time_end - time_start:.2f} seconds")
+    logger.info("--- Synchronous Test Finished ---")
 
 # --- Asynchronous Functions (Legacy asyncio Style) ---
 
@@ -81,3 +124,15 @@ def test_asyncio():
     logger.info(f"All async tasks completed in {time_end - time_start:.2f} seconds")
     logger.info(f"Async API results: {results}")
     logger.info("--- Asynchronous Test (Legacy Style) Finished ---")
+
+# --- Main Execution ---
+
+if __name__ == "__main__":
+    # Run synchronous test
+    test_sync()
+    
+    print("\n" + "="*50 + "\n")
+
+    # Run asynchronous test using the legacy event loop
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(test_asyncio())
