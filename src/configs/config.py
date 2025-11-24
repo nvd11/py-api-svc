@@ -14,9 +14,14 @@ sys.path.append(project_path)
 
 
 # setup logs path
-
-
-logger.add(os.path.join(project_path, "logs", "app.log"))
+logger.remove()
+# Configure sink for stdout to format messages as JSON for GCP Logging.
+# The 'serialize=True' flag tells loguru to output logs as a JSON object.
+# GCP Logging automatically parses JSON logs from stdout and uses the 'level.name' field
+# as the 'severity'. We set the level to "DEBUG" to capture all logs.
+logger.add(sys.stdout, serialize=True, level="DEBUG")
+# Keep the file logger for local debugging.
+logger.add(os.path.join(project_path, "logs", "app.log"), level="DEBUG")
 
 logger.info("basic setup done")
 
